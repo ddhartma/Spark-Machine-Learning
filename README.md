@@ -56,7 +56,7 @@ Here is an outline of this session:
 
 	```
 	from pyspark.sql import SparkSession
-	from pyspark.ml.feature import RegexTokenizer, VectorAssembler, Normalizer, StandardScaler
+	from pyspark.ml.feature import RegexTokenizer, VectorAssembler, Normalizer, StandardScaler, MinMaxScaler
 	from pyspark.sql.functions import udf
 	from pyspark.sql.types import IntegerType
 
@@ -146,17 +146,28 @@ Here is an outline of this session:
 	df = scaler.transform(df)
 	df.head()
 
+	Result:
 	Row(Body="<p>I'd like to check if an uploaded file is an image file (e.g png, jpg, jpeg, gif, bmp) or another file. The problem is that I'm using Uploadify to upload the files, which changes the mime type and gives a 'text/octal' or something as the mime type, no matter which file type you upload.</p>\n\n<p>Is there a way to check if the uploaded file is an image apart from checking the file extension using PHP?</p>\n", Id=1, Tags='php image-processing file-upload upload mime-types', Title='How to check if an uploaded file is an image without mime type?', oneTag='php', words=['p', 'i', 'd', 'like', 'to', 'check', 'if', 'an', 'uploaded', 'file', 'is', 'an', 'image', 'file', 'e', 'g', 'png', 'jpg', 'jpeg', 'gif', 'bmp', 'or', 'another', 'file', 'the', 'problem', 'is', 'that', 'i', 'm', 'using', 'uploadify', 'to', 'upload', 'the', 'files', 'which', 'changes', 'the', 'mime', 'type', 'and', 'gives', 'a', 'text', 'octal', 'or', 'something', 'as', 'the', 'mime', 'type', 'no', 'matter', 'which', 'file', 'type', 'you', 'upload', 'p', 'p', 'is', 'there', 'a', 'way', 'to', 'check', 'if', 'the', 'uploaded', 'file', 'is', 'an', 'image', 'apart', 'from', 'checking', 'the', 'file', 'extension', 'using', 'php', 'p'], BodyLength=83, NumParagraphs=2, NumLinks=0, NumFeatures=DenseVector([83.0, 2.0, 0.0]), ScaledNumFeatures=DenseVector([0.9997, 0.0241, 0.0]))
 	```
 	### Scale the Vectors
 	- Standardscaler normalize a feature to have unit standard deviation of 1 and a mean of 0
 	```
-	scaler2 = StandardScaler(inputCol="NumFeatures", outputCol="ScaledNumFeatures2", withStd=True)
+	scaler2 = StandardScaler(inputCol="NumFeatures", outputCol="ScaledNumFeatures2",  withStd=True, withMean=True)
 	scalerModel = scaler2.fit(df)
 	df = scalerModel.transform(df)
-
 	df.head()
+
+	Result:
 	Row(Body="<p>I'd like to check if an uploaded file is an image file (e.g png, jpg, jpeg, gif, bmp) or another file. The problem is that I'm using Uploadify to upload the files, which changes the mime type and gives a 'text/octal' or something as the mime type, no matter which file type you upload.</p>\n\n<p>Is there a way to check if the uploaded file is an image apart from checking the file extension using PHP?</p>\n", Id=1, Tags='php image-processing file-upload upload mime-types', Title='How to check if an uploaded file is an image without mime type?', oneTag='php', words=['p', 'i', 'd', 'like', 'to', 'check', 'if', 'an', 'uploaded', 'file', 'is', 'an', 'image', 'file', 'e', 'g', 'png', 'jpg', 'jpeg', 'gif', 'bmp', 'or', 'another', 'file', 'the', 'problem', 'is', 'that', 'i', 'm', 'using', 'uploadify', 'to', 'upload', 'the', 'files', 'which', 'changes', 'the', 'mime', 'type', 'and', 'gives', 'a', 'text', 'octal', 'or', 'something', 'as', 'the', 'mime', 'type', 'no', 'matter', 'which', 'file', 'type', 'you', 'upload', 'p', 'p', 'is', 'there', 'a', 'way', 'to', 'check', 'if', 'the', 'uploaded', 'file', 'is', 'an', 'image', 'apart', 'from', 'checking', 'the', 'file', 'extension', 'using', 'php', 'p'], BodyLength=83, NumParagraphs=2, NumLinks=0, NumFeatures=DenseVector([83.0, 2.0, 0.0]), ScaledNumFeatures=DenseVector([0.9997, 0.0241, 0.0]), ScaledNumFeatures2=DenseVector([0.4325, 0.7037, 0.0]))
+	```
+	- MINMAX Scaler
+	- default Scale: (0,1)
+	```
+	MinMaxScaler(inputCol="NumFeatures", outputCol="minmax_scaled")
+	scaler3 = MinMaxScaler(inputCol="NumFeatures", outputCol="ScaledNumFeatures3")
+	scalerModel = scaler3.fit(df)
+	df = scalerModel.transform(df)
+	df.head()
 	```
 
 ## Text Processing <a name="text_processing"></a>
