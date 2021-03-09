@@ -1,4 +1,5 @@
 [image1]: assets/spark_ml_overview.png "image1"
+[image2]: assets/sl_learning_overview.png "image2"
 
 # Spark - Machine Learning
 How to deal with ***Big Data***?
@@ -19,6 +20,10 @@ Here is an outline of this session:
 	- [Feature creation](#feature_creation)
 		- [Numeric Feature creation](#fnum_feature_creation)
 		- [Text Processing](#text_processing)
+		- [Dimensionality Reduction](#dim_reduction)
+	- [Supervised ML Algorithms](#sl_learning)
+		- [Linear Regression](lin_reg)
+
 	- [Model Training](#model_training)
 	- [Hyperparamter Tuning](#hyper_para_tuning)
 	- [Capabilities & limitations](#Capabilities_limitations)
@@ -52,7 +57,7 @@ Here is an outline of this session:
 
 ## Feature creation <a name="feature_creation"></a>
 ## Numeric Feature creation <a name="fnum_feature_creation"></a>
-- Open Jupyter Notebook 'numeric_feature.ipynb'
+- Open Jupyter Notebook ```numeric_feature.ipynb```
 
 	```
 	from pyspark.sql import SparkSession
@@ -93,7 +98,7 @@ Here is an outline of this session:
 	Result:
 	ow(Body="<p>I'd like to check if an uploaded file is an image file (e.g png, jpg, jpeg, gif, bmp) or another file. The problem is that I'm using Uploadify to upload the files, which changes the mime type and gives a 'text/octal' or something as the mime type, no matter which file type you upload.</p>\n\n<p>Is there a way to check if the uploaded file is an image apart from checking the file extension using PHP?</p>\n", Id=1, Tags='php image-processing file-upload upload mime-types', Title='How to check if an uploaded file is an image without mime type?', oneTag='php', words=['p', 'i', 'd', 'like', 'to', 'check', 'if', 'an', 'uploaded', 'file', 'is', 'an', 'image', 'file', 'e', 'g', 'png', 'jpg', 'jpeg', 'gif', 'bmp', 'or', 'another', 'file', 'the', 'problem', 'is', 'that', 'i', 'm', 'using', 'uploadify', 'to', 'upload', 'the', 'files', 'which', 'changes', 'the', 'mime', 'type', 'and', 'gives', 'a', 'text', 'octal', 'or', 'something', 'as', 'the', 'mime', 'type', 'no', 'matter', 'which', 'file', 'type', 'you', 'upload', 'p', 'p', 'is', 'there', 'a', 'way', 'to', 'check', 'if', 'the', 'uploaded', 'file', 'is', 'an', 'image', 'apart', 'from', 'checking', 'the', 'file', 'extension', 'using', 'php', 'p'])
 	```
-	count the number of words in each body tag
+	### BodyLength Feature: count the number of words in each body tag
 	```
 	body_length = udf(lambda x: len(x), IntegerType())
 	df = df.withColumn("BodyLength", body_length(df.words))
@@ -103,6 +108,7 @@ Here is an outline of this session:
 	number_of_paragraphs = udf(lambda x: len(re.findall("</p>", x)), IntegerType())
 	number_of_links = udf(lambda x: len(re.findall("</a>", x)), IntegerType())
 	```
+	### NumParagraphs and NumLinks Feature
 	```
 	df = df.withColumn("NumParagraphs", number_of_paragraphs(df.Body))
 	df = df.withColumn("NumLinks", number_of_links(df.Body))
@@ -252,9 +258,139 @@ Here is an outline of this session:
 
 	```
 
+## Dimensionality Reduction <a name="dim_reduction"></a>
+- Open Jupyter Notebook ```text_processing.ipynb```
+- Useful to remove correlated features and shrink the feature space
+- Pricipal Component Analysis is one of the most common techniques
+- There is a built-in method in Spark's feature library
+- The Result is a DenseVector
+- PCA works well, if the number of input columns is not too hight, otherwise **out-of-memory** errors could occur
+	```
+	from pyspark.ml.feature import PCA
+	pca = PCA(k=100, inputCol="TFIDF", outputCol="pcaTFIDF")
+	model = pca.fit(df)
+	df = model.transform(df)
+
+	Result:
+	Row(Body="<p>I'd like to check if an uploaded file is an image file (e.g png, jpg, jpeg, gif, bmp) or another file. The problem is that I'm using Uploadify to upload the files, which changes the mime type and gives a 'text/octal' or something as the mime type, no matter which file type you upload.</p>\n\n<p>Is there a way to check if the uploaded file is an image apart from checking the file extension using PHP?</p>\n", Id=1, Tags='php image-processing file-upload upload mime-types', Title='How to check if an uploaded file is an image without mime type?', oneTag='php', words=['p', 'i', 'd', 'like', 'to', 'check', 'if', 'an', 'uploaded', 'file', 'is', 'an', 'image', 'file', 'e', 'g', 'png', 'jpg', 'jpeg', 'gif', 'bmp', 'or', 'another', 'file', 'the', 'problem', 'is', 'that', 'i', 'm', 'using', 'uploadify', 'to', 'upload', 'the', 'files', 'which', 'changes', 'the', 'mime', 'type', 'and', 'gives', 'a', 'text', 'octal', 'or', 'something', 'as', 'the', 'mime', 'type', 'no', 'matter', 'which', 'file', 'type', 'you', 'upload', 'p', 'p', 'is', 'there', 'a', 'way', 'to', 'check', 'if', 'the', 'uploaded', 'file', 'is', 'an', 'image', 'apart', 'from', 'checking', 'the', 'file', 'extension', 'using', 'php', 'p'], TF=SparseVector(1000, {0: 4.0, 1: 6.0, 2: 2.0, 3: 3.0, 5: 2.0, 8: 4.0, 9: 1.0, 15: 1.0, 21: 2.0, 28: 1.0, 31: 1.0, 35: 3.0, 36: 1.0, 43: 2.0, 45: 2.0, 48: 1.0, 51: 1.0, 57: 6.0, 61: 2.0, 71: 1.0, 78: 1.0, 84: 3.0, 86: 1.0, 94: 1.0, 97: 1.0, 99: 1.0, 100: 1.0, 115: 1.0, 147: 2.0, 152: 1.0, 169: 1.0, 241: 1.0, 283: 1.0, 306: 1.0, 350: 2.0, 490: 1.0, 578: 1.0, 759: 1.0, 832: 2.0}), TFIDF=SparseVector(1000, {0: 0.0026, 1: 0.7515, 2: 0.1374, 3: 0.3184, 5: 0.3823, 8: 1.0754, 9: 0.3344, 15: 0.5899, 21: 1.8551, 28: 1.1263, 31: 1.1113, 35: 3.3134, 36: 1.2545, 43: 2.3741, 45: 2.3753, 48: 1.2254, 51: 1.1879, 57: 11.0264, 61: 2.8957, 71: 2.1945, 78: 1.6947, 84: 6.5898, 86: 1.6136, 94: 2.3569, 97: 1.8218, 99: 2.6292, 100: 1.9206, 115: 2.3592, 147: 5.4841, 152: 2.1116, 169: 2.6328, 241: 2.5745, 283: 3.2325, 306: 3.2668, 350: 6.2367, 490: 3.8893, 578: 3.6182, 759: 3.7771, 832: 8.8964}), label=3.0, pcaTFIDF=DenseVector([-0.5291, -0.8217, 0.3129, 0.02, 0.0323, -0.1371, 0.1032, -0.1511, 0.4816, -0.2657, 0.9031, -0.1125, 3.1339, -0.4338, -0.1165, 0.3052, 0.9695, -0.7508, 0.1898, -1.0876, 0.5371, -0.8804, 1.5681, -0.3721, -0.4511, 0.6415, 0.5597, -0.0773, 0.4399, 1.0323, -0.8446, 0.7257, -0.6349, -1.3363, -0.9206, 1.5778, -1.8451, -0.2224, -1.1524, -0.0381, -0.0415, 0.3505, 1.2341, -0.4662, 0.8383, 0.772, 0.7149, -1.0151, 0.148, 0.1278, -0.946, -0.6953, -1.5553, -0.9866, 0.7846, -0.7185, 0.946, 0.6609, -0.0182, 1.3281, -0.4261, -0.6093, -0.8237, -0.5232, -0.5305, -0.4872, 0.1315, 0.8463, -1.1532, -1.2489, 0.3981, -1.4053, 0.4366, -0.931, 0.062, 0.9369, 0.8366, -0.7272, 1.5533, -1.9902, -0.4451, 0.9578, 0.364, -0.3055, -0.9719, -1.1939, 1.1266, -0.3546, 1.6776, 2.1847, -0.0966, -1.6945, -0.9625, -0.7207, 0.4287, -0.6703, 0.7134, 0.2583, -1.692, -0.4525]))
+	```
+	
+## Supervised ML Algorithms <a name="sl_learning"></a>
+- If labels are categorical --> **Classification**
+- If labels are numeric (and continuous) --> **Regression**
+- Spark supports
+	- binary and multiclass classification such as 
+		- Logistic regression
+		- RandomForest
+		- Gradient boosted trees
+		- Support vector machines 
+		- Naive Bayes
+	- Regression	
+		- linear regression
+		- generalized linear regression
+		- Tree based regressions
 
 
+	![image2]
 
+## Linear Regression <a name="lin_reg"></a>()
+- Open Jupyter Notebook ```linear_regression.ipynb````
+	```
+	from pyspark.sql import SparkSession
+	from pyspark.sql.functions import col, concat, count, lit, udf, avg
+	from pyspark.sql.types import IntegerType
+	from pyspark.ml.feature import RegexTokenizer, VectorAssembler
+	from pyspark.ml.regression import LinearRegression
+	```
+	```
+	spark = SparkSession.builder \
+		.master("local") \
+		.appName("Creating Features") \
+		.getOrCreate()
+
+	stack_overflow_data = 'Train_onetag_small.json'
+
+	df = spark.read.json(stack_overflow_data)
+	df.persist()
+	```
+	### Create Features
+	```
+	df = df.withColumn("Desc", concat(col("Title"), lit(' '), col("Body")))
+	```
+	```
+	regexTokenizer = RegexTokenizer(inputCol="Desc", outputCol="words", pattern="\\W")
+	df = regexTokenizer.transform(df)	
+	```
+	### Create Feature - **DescLength**
+	```
+	body_length = udf(lambda x: len(x), IntegerType())
+	df = df.withColumn("DescLength", body_length(df.words))
+	```
+	```
+	assembler = VectorAssembler(inputCols=["DescLength"], outputCol="DescVec")
+	df = assembler.transform(df)
+	```
+	### Create Label - **NumTags**
+	```
+	number_of_tags = udf(lambda x: len(x.split(" ")), IntegerType())
+	df = df.withColumn("NumTags", number_of_tags(df.Tags))
+	```
+	Check if **feature DescLength** correlates with **label NumTags**
+	In fact, with longer description there are more tags in the body. DescLength seems to be a good feature for a NumTags prediction
+	```
+	df.groupby("NumTags").agg(avg(col("DescLength"))).orderBy("NumTags").show()
+
+	Result:
+	+-------+------------------+
+	|NumTags|   avg(DescLength)|
+	+-------+------------------+
+	|      1|143.68776158175783|
+	|      2| 162.1539186134137|
+	|      3|181.26021064340088|
+	|      4|201.46530249110322|
+	|      5|227.64375266524522|
+	+-------+------------------+
+	```
+	### Create a Linear Regression Model 
+	As there is only one feature, try to find the slope, but not the intercept
+	```
+	lr = LinearRegression(maxIter=5, regParam=0.0, fitIntercept=False, solver="normal")
+	```
+	### Choose the data for modeling
+	Choose a DataFrame that has only the target and the one feature
+	```
+	data = df.select(col("NumTags").alias("label"), col("DescVec").alias("features"))
+	data.head()
+
+	Result:
+	Row(label=5, features=DenseVector([96.0]))
+	```
+	### Create and Train the Model
+	```
+	lrModel = lr.fit(data)
+	```
+	### Check the results
+	```
+	lrModel.coefficients
+
+	Result:
+	DenseVector([0.0079])
+	```
+	```
+	lr_model.intercept
+
+	Result:
+	0.0
+	```
+	```
+	lr_model_summary = lrModel.summary
+	```
+	```
+	lr_model_summary.r2
+	
+	Result:
+	0.4455149596308462
+	```
 
 
 
