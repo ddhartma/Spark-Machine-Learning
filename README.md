@@ -20,9 +20,11 @@ Here is an outline of this session:
 	- [Feature creation](#feature_creation)
 		- [Numeric Feature creation](#fnum_feature_creation)
 		- [Text Processing](#text_processing)
-		- [Dimensionality Reduction](#dim_reduction)
+		- [Dimensionality Reduction via PCA](#dim_reduction)
 	- [Supervised ML Algorithms](#sl_learning)
-		- [Linear Regression](lin_reg)
+		- [Linear Regression](#lin_reg)
+		- [Logistic Regression](#log_reg)
+	- [Unsupervised ML Algorithms](#unsupervised)
 
 	- [Model Training](#model_training)
 	- [Hyperparamter Tuning](#hyper_para_tuning)
@@ -258,13 +260,15 @@ Here is an outline of this session:
 
 	```
 
-## Dimensionality Reduction <a name="dim_reduction"></a>
+## Dimensionality Reduction via PCA <a name="dim_reduction"></a>
 - Open Jupyter Notebook ```text_processing.ipynb```
 - Useful to remove correlated features and shrink the feature space
 - Pricipal Component Analysis is one of the most common techniques
 - There is a built-in method in Spark's feature library
 - The Result is a DenseVector
 - PCA works well, if the number of input columns is not too hight, otherwise **out-of-memory** errors could occur
+- k=100 means that we want to keep 100 components
+- 
 	```
 	from pyspark.ml.feature import PCA
 	pca = PCA(k=100, inputCol="TFIDF", outputCol="pcaTFIDF")
@@ -293,8 +297,8 @@ Here is an outline of this session:
 
 	![image2]
 
-## Linear Regression <a name="lin_reg"></a>()
-- Open Jupyter Notebook ```linear_regression.ipynb````
+## Linear Regression <a name="lin_reg"></a>
+- Open Jupyter Notebook ```linear_regression.ipynb```
 	```
 	from pyspark.sql import SparkSession
 	from pyspark.sql.functions import col, concat, count, lit, udf, avg
@@ -387,13 +391,110 @@ Here is an outline of this session:
 	```
 	```
 	lr_model_summary.r2
-	
+
 	Result:
 	0.4455149596308462
 	```
 
+## Logistic Regression <a name="log_reg"></a>
+- Open Jupyter Notebook ```logistic_regression.ipynb```
+- Let's use NumTags (Number of tags) as the label
+- Remember that NumTags correlates with the Length of the description
+- Label is is numeric value (in the xample below it is 5)
+- TFIDF is a SparseVector
+- Use TFIDF as the feature - so try to prove if you can predict the number of tags with the term interdocument frequency
+- LogisticRegression is a standard Modul from Spark's ml.classification library
+- Result from coefficientMatrix:
+	- DenseMatrix with 6 rows and 1000 columns
+	- Values are the intercept vecors
+	```
+	from pyspark.sql import SparkSession
+	from pyspark.ml.feature import RegexTokenizer, CountVectorizer, IDF, StringIndexer, PCA
+	from pyspark.sql.functions import udf, col
+	from pyspark.sql.types import IntegerType
+	from pyspark.ml.classification import LogisticRegression
 
+	import re
+	```
+	... see above or notebook (Tokenization)
+	```
+	number_of_tags = udf(lambda x: len(x.split(" ")), IntegerType())
+	df = df.withColumn("NumTags", number_of_tags(df.Tags))
 
+	data2 = df.select(col("NumTags").alias("label"), col("TFIDF").alias("features"))
+	data2.head()
+
+	Result:
+	Row(label=5, features=SparseVector(1000, {0: 0.0026, 1: 0.7515, 2: 0.1374, 3: 0.3184, 5: 0.3823, 8: 1.0754, 9: 0.3344, 15: 0.5899, 21: 1.8551, 28: 1.1263, 31: 1.1113, 35: 3.3134, 36: 1.2545, 43: 2.3741, 45: 2.3753, 48: 1.2254, 51: 1.1879, 57: 11.0264, 61: 2.8957, 71: 2.1945, 78: 1.6947, 84: 6.5898, 86: 1.6136, 94: 2.3569, 97: 1.8218, 99: 2.6292, 100: 1.9206, 115: 2.3592, 147: 5.4841, 152: 2.1116, 169: 2.6328, 241: 2.5745, 283: 3.2325, 306: 3.2668, 350: 6.2367, 490: 3.8893, 578: 3.6182, 759: 3.7771, 832: 8.8964}))
+	```
+	```
+	lr2 = LogisticRegression(maxIter=10, regParam=0.0)
+	```
+	```
+	lr2Model2 = lr2.fit(data2)
+	```
+	```
+	lr2Model2.coefficientMatrix
+
+	Result:
+	DenseMatrix(6, 1000, [-0.024, -0.0001, -0.0003, -0.0002, -0.0, -0.0001, -0.0, -0.0, ..., 0.0143, -0.0057, -0.0037, -0.0073, 0.0016, 0.0037, 0.0003, -0.0116], 1)
+	```
+	```
+	lr2Model2.summary.accuracy
+
+	Result:
+	0.31857
+	```
+
+## Unsupervised ML Algorithms <a name="unsupervised"></a>
+- Open Jupyter Notenbook ```k_means.ipynb```
+- There is no labeled data 
+- There are clusters
+- Based on similarieties between groups
+- In Spark included are clustering algorithms like 
+	- K-means
+	- Latent Dirichlet Allocation
+	- Gaussian Mixture Model
+- Consider that hybrid or semi-supervised (mixture of of unsupervised and supervised learning) is not fully implemented in Spark (own implementations are needed)
+- Example below: 
+	- k-means approach 
+	- with five clusters, 
+	- feature col "DescVec"
+	- prediction col ""DescGroup 
+	```
+	from pyspark.sql import SparkSession
+	from pyspark.sql.functions import avg, col, concat, count, desc, explode, lit, min, max, split, stddev, udf
+	from pyspark.sql.types import IntegerType
+	from pyspark.ml.feature import RegexTokenizer, VectorAssembler
+	from pyspark.ml.regression import LinearRegression
+	from pyspark.ml.clustering import KMeans
+	```
+	... preprocessing see notebook
+	```
+	kmeans = KMeans().setParams(featuresCol="DescVec", predictionCol="DescGroup", k=5, seed=42)
+	model = kmeans.fit(df)
+	df = model.transform(df)
+	```
+	```
+	df.head()
+
+	Result:
+	Row(Body="<p>I'd like to check if an uploaded file is an image file (e.g png, jpg, jpeg, gif, bmp) or another file. The problem is that I'm using Uploadify to upload the files, which changes the mime type and gives a 'text/octal' or something as the mime type, no matter which file type you upload.</p>\n\n<p>Is there a way to check if the uploaded file is an image apart from checking the file extension using PHP?</p>\n", Id=1, Tags='php image-processing file-upload upload mime-types', Title='How to check if an uploaded file is an image without mime type?', oneTag='php', Desc="How to check if an uploaded file is an image without mime type? <p>I'd like to check if an uploaded file is an image file (e.g png, jpg, jpeg, gif, bmp) or another file. The problem is that I'm using Uploadify to upload the files, which changes the mime type and gives a 'text/octal' or something as the mime type, no matter which file type you upload.</p>\n\n<p>Is there a way to check if the uploaded file is an image apart from checking the file extension using PHP?</p>\n", words=['how', 'to', 'check', 'if', 'an', 'uploaded', 'file', 'is', 'an', 'image', 'without', 'mime', 'type', 'p', 'i', 'd', 'like', 'to', 'check', 'if', 'an', 'uploaded', 'file', 'is', 'an', 'image', 'file', 'e', 'g', 'png', 'jpg', 'jpeg', 'gif', 'bmp', 'or', 'another', 'file', 'the', 'problem', 'is', 'that', 'i', 'm', 'using', 'uploadify', 'to', 'upload', 'the', 'files', 'which', 'changes', 'the', 'mime', 'type', 'and', 'gives', 'a', 'text', 'octal', 'or', 'something', 'as', 'the', 'mime', 'type', 'no', 'matter', 'which', 'file', 'type', 'you', 'upload', 'p', 'p', 'is', 'there', 'a', 'way', 'to', 'check', 'if', 'the', 'uploaded', 'file', 'is', 'an', 'image', 'apart', 'from', 'checking', 'the', 'file', 'extension', 'using', 'php', 'p'], DescLength=96, DescVec=DenseVector([96.0]), NumTags=5, DescGroup=0)
+	```
+	```
+	df.groupby("DescGroup").agg(avg(col("DescLength")), avg(col("NumTags")), count(col("DescLength"))).orderBy("avg(DescLength)").show()
+
+	Result:
+	+---------+------------------+------------------+-----------------+
+	|DescGroup|   avg(DescLength)|      avg(NumTags)|count(DescLength)|
+	+---------+------------------+------------------+-----------------+
+	|        0| 96.71484436347646|   2.7442441184785|            63674|
+	|        4| 241.0267434466191| 3.093549070868367|            28306|
+	|        2|499.83863263173606|3.2294372294372296|             6699|
+	|        1|      1074.2109375|3.2864583333333335|             1152|
+	|        3|2731.0828402366865|  3.42603550295858|              169|
+	+---------+------------------+------------------+-----------------+
+	```
 
 
 
