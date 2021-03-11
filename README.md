@@ -1,5 +1,6 @@
 [image1]: assets/spark_ml_overview.png "image1"
 [image2]: assets/sl_learning_overview.png "image2"
+[image3]: assets/ml_pipeline.png "image3"
 
 # Spark - Machine Learning
 How to deal with ***Big Data***?
@@ -30,7 +31,7 @@ Here is an outline of this session:
 	- [Hyperparamter Tuning](#hyper_para_tuning)
 	- [Capabilities & limitations](#Capabilities_limitations)
 	- [Train models at Scale](#Train_models_at_Scale)
-	
+	- [Machine Learning Pipelines](#ml_pipelines)
 
 - [Setup Instructions](#Setup_Instructions)
 - [Acknowledgments](#Acknowledgments)
@@ -497,10 +498,86 @@ Here is an outline of this session:
 	```
 
 
+## Machine Learning Pipelines <a name="ml_pipelines"></a>
+- Open Jupyter Notebook ```ml_pipeline.ipynb```
+- Pipelines have two main components 
+- Transformer is an algorithm that transforms a dataframe to another
+- There are two use cases for transformers 
+	- feature transformation (tokenizer - changing text --> to numerical values, scaling columns etc.)
+	- making predictions for supervised learning models by transforming features using a model into predicted outcomes
+- Estimators fit algorithm parameters on a dataframe to create a transformer. 
+	- It fits or trains data.
+	- It implements a method fit which accepts a dataframe and
+	- produces a model
+- A Pipeliine chains multiple transformers and estimators together to create an ML workflow
 
+	![image3]
+- Spark offers similar pipelines like in scikit-learn.  The chaining process need to be a **directed acyclic graph**. 
+	```
+	print(type(lr2))
 
+	Result:
+	<class 'pyspark.ml.classification.LogisticRegression'>
+	```
+	```
+	# lr2Model2 is a transformer
+	print(type(lr2Model2))
 
+	Result:
+	<class 'pyspark.ml.classification.LogisticRegressionModel'>
+	```
+	Create a new dataframe
+	```
+	df2 = spark.read.json(stack_overflow_data)
+	df2.persist()
+	```
+	- Implement a RegexTokenizer that turns the body into a list of words
+	- Use CountVectorizer to transform the words into term frequencies
+	- Set vocab size to 10000
+	- Use IDF to transform term frequencies into TFIDF
+	- Use Stringindexer to transform string tags into numeric values
+	- Define a LogisticRegression Model
+	- Define the actual pipeline object
+	- As this set of transformers depends on the previous one the chaining order in the pipeline must be kept.
+	- StringIndexer is independent from the previous step
+	```
+	# split the body text into separate words
+	regexTokenizer = RegexTokenizer(inputCol="Body", outputCol="words", pattern="\\W")
+	cv = CountVectorizer(inputCol="words", outputCol="TF", vocabSize=10000)
+	idf = IDF(inputCol="TF", outputCol="features")
+	indexer = StringIndexer(inputCol="oneTag", outputCol="label")
 
+	lr = LogisticRegression(maxIter=10, regParam=0.0, elasticNetParam=0)
+
+	pipeline = Pipeline(stages=[regexTokenizer, cv, idf, indexer, lr])
+	```
+	Now train the pipeline
+	```
+	plr = pipeline.fit(df2)
+	```
+	There are two new columns 
+	- probability --> type DenseVector
+	- prediction --> type numercal value
+	- You can see that the third label (in probability is quite high  with85%) this is the prediction
+	```
+	df3 = plrModel.transform(df2)
+	df3.head()
+
+	Result:
+	...
+	probability=DenseVector([0.027, 0.0083, 0.0077, 0.855, 0.0023, 0.0033, 0.0005, 0.0006, 0.0078, 0.0007, 0.0022, 0.0008, 0.0047, 0.0006, 0.0004, 0.0034, 0.001, 0.0013, 0.001, 0.0036, 0.0006, 0.0007, 0.0007, 0.0006, 0.0004, 0.0011, 0.001, 0.0009, 0.001, 0.0005, 0.0004, 0.0005, 0.0009, 0.0004, 0.0003, 0.0012, 0.0004, 0.0009, 0.0008, 0.0007, 0.0006, 0.0009, 0.0008, 0.0005, 0.0004, 0.0005, 0.0004, 0.0007, 0.0004, 0.0005, 0.0005, 0.0006, 0.0003, 0.0006, 0.0005, 0.0005, 0.0005, 0.0002, 0.0003, 0.0002, 0.0007, 0.0005, 0.0005, 0.0004, 0.0002, 0.0004, 0.0006, 0.0005, 0.0003, 0.0007, 0.0007, 0.0003, 0.0004, 0.0004, 0.0004, 0.0006, 0.0003, 0.0005, 0.0004, 0.0002, 0.0004, 0.0003, 0.0002, 0.0003, 0.0002, 0.0003, 0.0003, 0.0005, 0.0004, 0.0005, 0.0003, 0.0003, 0.0003, 0.0002, 0.0002, 0.0003, 0.0002, 0.0004, 0.0003, 0.0003, 0.0002, 0.0003, 0.0003, 0.0003, 0.0003, 0.0002, 0.0002, 0.0007, 0.0002, 0.0002, 0.0002, 0.0003, 0.0002, 0.0002, 0.0002, 0.0002, 0.0002, 0.0003, 0.0002, 0.0002, 0.0002, 0.0002, 0.0002, 0.0003, 0.0002, 0.0003, 0.0002, 0.0003, 0.0002, 0.0002, 0.0002, 0.0002, 0.0003, 0.0003, 0.0002, 0.0004, 0.0002, 0.0002, 0.0002, 0.0002, 0.0002, 0.0002, 0.0002, 0.0002, 0.0002, 0.0002, 0.0002, 0.0002, 0.0001, 0.0002, 0.0002, 0.0002, 0.0001, 0.0002, 0.0002, 0.0002, 0.0002, 0.0002, 0.0002, 0.0002, 0.0002, 0.0001, 0.0002, 0.0001, 0.0002, 0.0002, 0.0001, 0.0002, 0.0002, 0.0001, 0.0002, 0.0001, 0.0002, 0.0001, 0.0002, 0.0001, 0.0001, 0.0002, 0.0001, 0.0002, 0.0002, 0.0002, 0.0001, 0.0001, 0.0002, 0.0001, 0.0001, 0.0001, 0.0002, 0.0001, 0.0001, 0.0001, 0.0001, 0.0001, 0.0001, 0.0001, 0.0001, 0.0001, 0.0001, 0.0001, 0.0002, 0.0001, 0.0001, 0.0001, 0.0001, 0.0001, 0.0002, 0.0001, 0.0001, 0.0001, 0.0001, 0.0001, 0.0001, 0.0001, 0.0001, 0.0001, 0.0001, 0.0001, 0.0001, 0.0001, 0.0001, 0.0001, 0.0001, 0.0001, 0.0002, 0.0001, 0.0001, 0.0001, 0.0001, 0.0001, 0.0001, 0.0001, 0.0001, 0.0001, 0.0001, 0.0001, 0.0001, 0.0001, 0.0001, 0.0001, 0.0001, 0.0001, 0.0001, 0.0002, 0.0001, 0.0001, 0.0001, 0.0001, 0.0001, 0.0001, 0.0001, 0.0001, 0.0001, 0.0001, 0.0001, 0.0001, 0.0001, 0.0001, 0.0001, 0.0001, 0.0001, 0.0002, 0.0001, 0.0001, 0.0001, 0.0001, 0.0001, 0.0001, 0.0001, 0.0001, 0.0001, 0.0001, 0.0001, 0.0001, 0.0001, 0.0001, 0.0001, 0.0001, 0.0001, 0.0001, 0.0001, 0.0001, 0.0001, 0.0001, 0.0001, 0.0001, 0.0001, 0.0001, 0.0001, 0.0001, 0.0001, 0.0001, 0.0001, 0.0001, 0.0001, 0.0001, 0.0001, 0.0001, 0.0, 0.0001, 0.0]), prediction=3.0)
+	```
+	Check the prediction: 
+	- Filter where the label == prediction  
+	- and then count
+	```
+	df3.filter(df3.label == df3.prediction).count()
+
+	Result:
+	54616
+	```
+	From 10000 half - for half of it is the prediction right
+	
 
 
 
