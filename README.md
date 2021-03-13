@@ -1,6 +1,9 @@
 [image1]: assets/spark_ml_overview.png "image1"
 [image2]: assets/sl_learning_overview.png "image2"
 [image3]: assets/ml_pipeline.png "image3"
+[image4]: assets/hyper_tuning.png "image4"
+[image5]: assets/parameter_grid_evaluator.png "image5"
+
 
 # Spark - Machine Learning
 How to deal with ***Big Data***?
@@ -32,6 +35,7 @@ Here is an outline of this session:
 	- [Capabilities & limitations](#Capabilities_limitations)
 	- [Train models at Scale](#Train_models_at_Scale)
 	- [Machine Learning Pipelines](#ml_pipelines)
+	- [Model Selection and Tuning](#model_select_tuning)
 
 - [Setup Instructions](#Setup_Instructions)
 - [Acknowledgments](#Acknowledgments)
@@ -578,7 +582,98 @@ Here is an outline of this session:
 	```
 	From 10000 half - for half of it is the prediction right
 	
+## Model Selection and Tuning <a name="model_select_tuning"></a>
+- Open Jupyer Notebook ```model_tuning.ipynb```
+- Hyperparameter Tuning is needed to get the best model
+- Spark offers hyperparameter tuning via
+	- Train-Validation Split
+	- k-fold Cross Validation
+- Two parameters are needed
+	1. Define the parameter grid to explore
+	2. Evaluator. It defines the metric to evaluate the results on the test set
+- The best parameter combination is found by using the built-in cross validation methods
+- Spark fits the estimator using this best parameter set and the entire dataset
+- Before Spark 2.3 models were trained sequentially 
+- After Spark 2.3 models can be trained in paralle
 
+	![image5]
+	```
+	from pyspark.sql import SparkSession
+	from pyspark.sql.functions import avg, col, concat, desc, explode, lit, min, max, split, udf
+	from pyspark.sql.types import IntegerType
+
+	from pyspark.ml import Pipeline
+	from pyspark.ml.classification import LogisticRegression
+	from pyspark.ml.evaluation import MulticlassClassificationEvaluator
+	from pyspark.ml.feature import CountVectorizer, IDF, Normalizer, PCA, RegexTokenizer, StandardScaler, StopWordsRemover, StringIndexer, VectorAssembler
+	from pyspark.ml.regression import LinearRegression
+	from pyspark.ml.tuning import CrossValidator, ParamGridBuilder
+
+	import re
+	```
+	Make a random split to create train and test sets
+	```
+	train, test = df.randomSplit([0.8, 0.2], seed=42)
+	```
+	Or use this to ake a random split into train, validation and test sets
+	```
+	train, rest = df.randomSplit([0.6, 0.4], seed=42)
+	test, validation = rest.randomSplit([0.5, 0.5], seed=42)
+	```
+	Use the pipeline as before
+	```
+	regexTokenizer = RegexTokenizer(inputCol="Body", outputCol="words", pattern="\\W")
+	cv = CountVectorizer(inputCol="words", outputCol="TF", vocabSize=1000)
+	idf = IDF(inputCol="TF", outputCol="features")
+	indexer = StringIndexer(inputCol="oneTag", outputCol="label")
+
+	lr =  LogisticRegression(maxIter=10, regParam=0.0, elasticNetParam=0)
+
+	pipeline = Pipeline(stages=[regexTokenizer, cv, idf, indexer, lr])
+	```
+	Tune the model: Use the k-fold cross validation method
+	- Specify the estimator (here pipeline)
+	- Specify estimatorParamMaps for a parameter grid search
+	- Specify an evaluator: here the MulticlassClassificationEvaluator
+	- numFolds (the part 1/numFolds is for testing, rest for training): e.g. 3 --> keep two thirds for training, use one third for testing. Then repeat this process three times
+	
+	For the ParameterGrid
+	- Let's tune the number of words we keep in TFIDF features (e.g. 1000 and 5000 words)
+	- Consider: Number of models to train = number of parameters * numFolds
+	```
+	paramGrid = ParamGridBuilder() \
+		.addGrid(cv.vocabSize,[1000, 5000]) \
+		.addGrid(lr.regParam,[0.0, 0.1]) \
+		.build()
+
+
+	crossval = CrossValidator(estimator=pipeline,
+							estimatorParamMaps=paramGrid,
+							evaluator=MulticlassClassificationEvaluator(),
+							numFolds=3)
+	```
+	Check the results 
+	```
+	cvModel_q1 = crossval.fit(train)
+	```
+	For each parameter we get a list as below. 5000 words seem to give bit better accuracy than 1000 words
+	```
+	cvModel_q1.avgMetrics
+
+	Result:
+
+	```
+	Check acciracy of the test set via
+	```
+	print(results.filter(results.label == results.prediction).count())
+	print(results.count())
+
+	Result:
+	3892
+	9919
+
+	3892 / 9919 = 0.392378263937897
+	```
 
 
 
