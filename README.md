@@ -13,7 +13,7 @@ Spark is currently one of the most popular tools for big data analytics. You mig
 
 There are many other big data tools and systems, each with its own use case. For example, there are database system like Apache Cassandra and SQL query engines like Presto. But Spark is still one of the most popular tools for analyzing large data sets.
 
-Instead of using the own computer it is easier to use a ***distributed system*** of multiple computers (e.g. hundereds of servers on the Amazon Data Center). Spark is one tool to allow this.
+Instead of using the own computer it is easier to use a ***distributed system*** of multiple computers (e.g. hundereds of servers on the Amazon Data Center). Spark is one framework that enables distributed computing.
 
 Further info you can find in the first part [park-Big-Data-Analytics](https://github.com/ddhartma/Spark-Big-Data-Analytics.git)
 
@@ -29,14 +29,8 @@ Here is an outline of this session:
 		- [Linear Regression](#lin_reg)
 		- [Logistic Regression](#log_reg)
 	- [Unsupervised ML Algorithms](#unsupervised)
-
-	- [Model Training](#model_training)
-	- [Hyperparamter Tuning](#hyper_para_tuning)
-	- [Capabilities & limitations](#Capabilities_limitations)
-	- [Train models at Scale](#Train_models_at_Scale)
 	- [Machine Learning Pipelines](#ml_pipelines)
 	- [Model Selection and Tuning](#model_select_tuning)
-
 - [Setup Instructions](#Setup_Instructions)
 - [Acknowledgments](#Acknowledgments)
 - [Further Links](#Further_Links)
@@ -134,7 +128,7 @@ Here is an outline of this session:
 	]
 	```
 	### VectorAssembler
-	- For many models we need to normalize thepr values, to make sure that they span across the same range
+	- For many models we need to normalize the values, to make sure that they span across the same range
 	- Otherwise features with the highest values could dominate the results
 	- SparksML offers normalizer, standard scaler and minmax-scaler
 	- All these functions require vector rows as an input 
@@ -176,7 +170,6 @@ Here is an outline of this session:
 	- MINMAX Scaler
 	- default Scale: (0,1)
 	```
-	MinMaxScaler(inputCol="NumFeatures", outputCol="minmax_scaled")
 	scaler3 = MinMaxScaler(inputCol="NumFeatures", outputCol="ScaledNumFeatures3")
 	scalerModel = scaler3.fit(df)
 	df = scalerModel.transform(df)
