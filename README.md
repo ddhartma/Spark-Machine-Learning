@@ -654,9 +654,13 @@ Here is an outline of this session:
 	cvModel_q1.avgMetrics
 
 	Result:
+	[0.30653390468824687,
+	0.23318033120072945,
+	0.3640135546612686,
+	0.2865146206452452]
 
 	```
-	Check acciracy of the test set via
+	Check accuracy of the test set via
 	```
 	print(results.filter(results.label == results.prediction).count())
 	print(results.count())
