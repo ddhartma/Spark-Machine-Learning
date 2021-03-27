@@ -8,9 +8,7 @@
 # Spark - Machine Learning
 Why is Spark a powerful tool for **Big Data** Analytics? 
 
-Besides Hadoop, Spark - slightly newer and faster technology than Hadoop - is currently one of the most popular tools for big data analytics. 
-
-There are many other big data tools and systems, each with its own use case. For example, there are database system like Apache Cassandra and SQL query engines like Presto. But Spark is still one of the most popular tools for analyzing large data sets.
+There are many other big data tools and systems, each with its own use case. For example, there are database system like Hadoop, Apache Cassandra and SQL query engines like Presto. With regard to Hadoop, Spark - a slightly newer and faster technology than Hadoop - is currently one of the most popular tools for big data analytics. 
 
 In case of Big Data it is easier to use a ***distributed system*** of multiple computers (e.g. hundreds of servers on the Amazon Data Center) than using a single machine. Spark is one framework that enables distributed computing.
 
