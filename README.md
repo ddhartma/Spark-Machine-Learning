@@ -6,18 +6,17 @@
 
 
 # Spark - Machine Learning
-How to deal with ***Big Data***?
+Why is Spark a powerful tool for **Big Data** Analytics? 
 
-Why Learn Spark?
-Spark is currently one of the most popular tools for big data analytics. You might have heard of other tools such as Hadoop. Hadoop is a slightly older technology although still in use by some companies. Spark is generally faster than Hadoop, which is why Spark has become more popular over the last few years.
+Besides Hadoop, Spark - slightly newer and faster technology than Hadoop - is currently one of the most popular tools for big data analytics. 
 
 There are many other big data tools and systems, each with its own use case. For example, there are database system like Apache Cassandra and SQL query engines like Presto. But Spark is still one of the most popular tools for analyzing large data sets.
 
-Instead of using the own computer it is easier to use a ***distributed system*** of multiple computers (e.g. hundereds of servers on the Amazon Data Center). Spark is one framework that enables distributed computing.
+In case of Big Data it is easier to use a ***distributed system*** of multiple computers (e.g. hundreds of servers on the Amazon Data Center) than using a single machine. Spark is one framework that enables distributed computing.
 
-Further info you can find in the first part [park-Big-Data-Analytics](https://github.com/ddhartma/Spark-Big-Data-Analytics.git)
+Further info is provided in the first part [park-Big-Data-Analytics](https://github.com/ddhartma/Spark-Big-Data-Analytics.git)
 
-Here is an outline of this session:
+The outline of this session:
 
 ## Outline
 - [Machine Learning with Spark](#ml_with_Spark)
@@ -36,29 +35,29 @@ Here is an outline of this session:
 - [Further Links](#Further_Links)
 
 # Machine Learning with Spark <a name="ml_with_Spark"></a> 
-- Spark supports two MAchine Learning Libraries
+- Spark supports two Machine Learning Libraries
 	- SparkML (standard ML library, DataFrames API)
 	- SparkMLlib (an additive base library, to be removed in the future in Spark 3.2)
 
-- For further details see the [MLlib documentation](https://spark.apache.org/docs/latest/ml-guide.html)
+- For further details see the [MLlib documentation](https://spark.apache.org/docs/latest/ml-guide.html).
 
-- As Spark DataFrames are close to Python DataFrames, Spark MLlib is close to Scikit-learn packages
-- Spark MLlib supports pipelines for stitching together 
+- As Spark DataFrames are close to Python DataFrames, Spark MLlib is close to scikit-learn packages.
+- Spark MLlib supports pipelines for stitching together: 
 	- Data cleaning 
 	- Feature engineering steps 
 	- Training 
 	- Prediction
-- Spark handles algorithms that scale linearly with input data size
-- In terms of distributed computing there are two different ways to achieve parallelization
-	- Data parallelization - Use a large dataset and train the same model on smaller subsets of the data in parallel. The Driver Program acts as a Parameter server for most algorithms where the partial result of each iteration gets combined (model results)
-	- Task parallelization - Train many models in parallel on a dataset small enough to fit on a single machine
+- Spark handles algorithms that scale linearly with input data size.
+- In terms of distributed computing there are two different ways to achieve parallelization:
+	- Data parallelization - Train the ***same model*** on smaller subsets of the Big Data set in parallel. The Driver Program acts as a Parameter server for most algorithms where the partial result of each iteration gets combined (model results).
+	- Task parallelization - Train ***many models*** in parallel on a dataset small enough to fit on a single machine.
 
 	![image1]
 
 
 ## Feature creation <a name="feature_creation"></a>
 ## Numeric Feature creation <a name="fnum_feature_creation"></a>
-- Open Jupyter Notebook ```numeric_feature.ipynb```
+- Open Jupyter Notebook ```numeric_feature.ipynb```.
 
 	```
 	from pyspark.sql import SparkSession
@@ -69,7 +68,7 @@ Here is an outline of this session:
 	import re
 	```
 	```
-	# create a SparkSession: note this step was left out of the screencast
+	# Create a SparkSession: note this step was left out of the screencast
 	spark = SparkSession.builder \
 		.master("local") \
 		.appName("Word Count") \
@@ -81,16 +80,16 @@ Here is an outline of this session:
 	df = spark.read.json(stack_overflow_data)
 	df.head()
 
-	result:
+	Result:
 	Row(Body="<p>I'd like to check if an uploaded file is an image file (e.g png, jpg, jpeg, gif, bmp) or another file. The problem is that I'm using Uploadify to upload the files, which changes the mime type and gives a 'text/octal' or something as the mime type, no matter which file type you upload.</p>\n\n<p>Is there a way to check if the uploaded file is an image apart from checking the file extension using PHP?</p>\n", Id=1, Tags='php image-processing file-upload upload mime-types', Title='How to check if an uploaded file is an image without mime type?', oneTag='php')
 	```
 	### Tokenization: 
 	Let's split string sentences into separate words.
 	Use Sparks [Tokenizer](https://spark.apache.org/docs/latest/ml-features.html#tokenizer)
-	- Turn the body into lowercase words, 
-	- remove puntuation and special characters (done via pattern="\\W")
-	- input column: body
-	- output column: words
+	- Turn the body into lowercase words:
+	- Remove punctuation and special characters (done via pattern="\\W")
+	- Input column: body
+	- Output column: words
 	```
 	regexTokenizer = RegexTokenizer(inputCol="Body", outputCol="words", pattern="\\W")
 	df = regexTokenizer.transform(df)
@@ -104,7 +103,7 @@ Here is an outline of this session:
 	body_length = udf(lambda x: len(x), IntegerType())
 	df = df.withColumn("BodyLength", body_length(df.words))
 	```
-	count the number of paragraphs and links in each body tag
+	Count the number of paragraphs and links in each body tag
 	```
 	number_of_paragraphs = udf(lambda x: len(re.findall("</p>", x)), IntegerType())
 	number_of_links = udf(lambda x: len(re.findall("</a>", x)), IntegerType())
@@ -128,14 +127,14 @@ Here is an outline of this session:
 	]
 	```
 	### VectorAssembler
-	- For many models we need to normalize the values, to make sure that they span across the same range
-	- Otherwise features with the highest values could dominate the results
-	- SparksML offers normalizer, standard scaler and minmax-scaler
-	- All these functions require vector rows as an input 
-	- Numeric columns must be converted to Spark's vector type
-	- We can use VectorAssembler from SparkML for that
+	- For many models we need to normalize the values, to make sure that they span across the same range.
+	- Otherwise features with the highest values could dominate the results.
+	- SparksML offers normalizer, standard scaler and minmax-scaler.
+	- All these functions require vector rows as an input. 
+	- Numeric columns must be converted to Spark's vector type.
+	- We can use VectorAssembler from SparkML for that.
 	- After that: There is a new column called: NumFeatures=DenseVector([83.0, 2.0, 0.0])
-	Combine the body length, number of paragraphs, and number of links columns into a vector
+	Combine the body length, number of paragraphs, and number of links columns into a vector.
 	```
 	assembler = VectorAssembler(inputCols=["BodyLength", "NumParagraphs", "NumLinks"], outputCol="NumFeatures")
 	df = assembler.transform(df)
@@ -145,9 +144,9 @@ Here is an outline of this session:
 	Row(Body="<p>I'd like to check if an uploaded file is an image file (e.g png, jpg, jpeg, gif, bmp) or another file. The problem is that I'm using Uploadify to upload the files, which changes the mime type and gives a 'text/octal' or something as the mime type, no matter which file type you upload.</p>\n\n<p>Is there a way to check if the uploaded file is an image apart from checking the file extension using PHP?</p>\n", Id=1, Tags='php image-processing file-upload upload mime-types', Title='How to check if an uploaded file is an image without mime type?', oneTag='php', words=['p', 'i', 'd', 'like', 'to', 'check', 'if', 'an', 'uploaded', 'file', 'is', 'an', 'image', 'file', 'e', 'g', 'png', 'jpg', 'jpeg', 'gif', 'bmp', 'or', 'another', 'file', 'the', 'problem', 'is', 'that', 'i', 'm', 'using', 'uploadify', 'to', 'upload', 'the', 'files', 'which', 'changes', 'the', 'mime', 'type', 'and', 'gives', 'a', 'text', 'octal', 'or', 'something', 'as', 'the', 'mime', 'type', 'no', 'matter', 'which', 'file', 'type', 'you', 'upload', 'p', 'p', 'is', 'there', 'a', 'way', 'to', 'check', 'if', 'the', 'uploaded', 'file', 'is', 'an', 'image', 'apart', 'from', 'checking', 'the', 'file', 'extension', 'using', 'php', 'p'],  BodyLength=83, NumParagraphs=2, NumLinks=0, NumFeatures=DenseVector([83.0, 2.0, 0.0]))
 	```
 	### Normalize the Vectors
-	- Now let's normalize the Spark Vector NumFeatures
-	- We get a new column with ScaledNumFeatures=DenseVector([0.9997, 0.0241, 0.0])
-	- Normalizer is a transformer which transforms a vector row to unit norm (vector elements sum up to 1)
+	- Now let's normalize the Spark Vector NumFeatures.
+	- We get a new column with ScaledNumFeatures=DenseVector([0.9997, 0.0241, 0.0]).
+	- Normalizer is a transformer which transforms a vector row to ***unit norm - vector elements sum up to 1***.
 	```
 	scaler = Normalizer(inputCol="NumFeatures", outputCol="ScaledNumFeatures")
 	df = scaler.transform(df)
@@ -157,7 +156,7 @@ Here is an outline of this session:
 	Row(Body="<p>I'd like to check if an uploaded file is an image file (e.g png, jpg, jpeg, gif, bmp) or another file. The problem is that I'm using Uploadify to upload the files, which changes the mime type and gives a 'text/octal' or something as the mime type, no matter which file type you upload.</p>\n\n<p>Is there a way to check if the uploaded file is an image apart from checking the file extension using PHP?</p>\n", Id=1, Tags='php image-processing file-upload upload mime-types', Title='How to check if an uploaded file is an image without mime type?', oneTag='php', words=['p', 'i', 'd', 'like', 'to', 'check', 'if', 'an', 'uploaded', 'file', 'is', 'an', 'image', 'file', 'e', 'g', 'png', 'jpg', 'jpeg', 'gif', 'bmp', 'or', 'another', 'file', 'the', 'problem', 'is', 'that', 'i', 'm', 'using', 'uploadify', 'to', 'upload', 'the', 'files', 'which', 'changes', 'the', 'mime', 'type', 'and', 'gives', 'a', 'text', 'octal', 'or', 'something', 'as', 'the', 'mime', 'type', 'no', 'matter', 'which', 'file', 'type', 'you', 'upload', 'p', 'p', 'is', 'there', 'a', 'way', 'to', 'check', 'if', 'the', 'uploaded', 'file', 'is', 'an', 'image', 'apart', 'from', 'checking', 'the', 'file', 'extension', 'using', 'php', 'p'], BodyLength=83, NumParagraphs=2, NumLinks=0, NumFeatures=DenseVector([83.0, 2.0, 0.0]), ScaledNumFeatures=DenseVector([0.9997, 0.0241, 0.0]))
 	```
 	### Scale the Vectors
-	- Standardscaler normalize a feature to have unit standard deviation of 1 and a mean of 0
+	- Standardscaler normalize a feature to have ***unit standard deviation of 1*** and a ***mean of 0***.
 	```
 	scaler2 = StandardScaler(inputCol="NumFeatures", outputCol="ScaledNumFeatures2",  withStd=True, withMean=True)
 	scalerModel = scaler2.fit(df)
@@ -168,7 +167,7 @@ Here is an outline of this session:
 	Row(Body="<p>I'd like to check if an uploaded file is an image file (e.g png, jpg, jpeg, gif, bmp) or another file. The problem is that I'm using Uploadify to upload the files, which changes the mime type and gives a 'text/octal' or something as the mime type, no matter which file type you upload.</p>\n\n<p>Is there a way to check if the uploaded file is an image apart from checking the file extension using PHP?</p>\n", Id=1, Tags='php image-processing file-upload upload mime-types', Title='How to check if an uploaded file is an image without mime type?', oneTag='php', words=['p', 'i', 'd', 'like', 'to', 'check', 'if', 'an', 'uploaded', 'file', 'is', 'an', 'image', 'file', 'e', 'g', 'png', 'jpg', 'jpeg', 'gif', 'bmp', 'or', 'another', 'file', 'the', 'problem', 'is', 'that', 'i', 'm', 'using', 'uploadify', 'to', 'upload', 'the', 'files', 'which', 'changes', 'the', 'mime', 'type', 'and', 'gives', 'a', 'text', 'octal', 'or', 'something', 'as', 'the', 'mime', 'type', 'no', 'matter', 'which', 'file', 'type', 'you', 'upload', 'p', 'p', 'is', 'there', 'a', 'way', 'to', 'check', 'if', 'the', 'uploaded', 'file', 'is', 'an', 'image', 'apart', 'from', 'checking', 'the', 'file', 'extension', 'using', 'php', 'p'], BodyLength=83, NumParagraphs=2, NumLinks=0, NumFeatures=DenseVector([83.0, 2.0, 0.0]), ScaledNumFeatures=DenseVector([0.9997, 0.0241, 0.0]), ScaledNumFeatures2=DenseVector([0.4325, 0.7037, 0.0]))
 	```
 	- MINMAX Scaler
-	- default Scale: (0,1)
+	- ***default Scale: (0,1)***
 	```
 	scaler3 = MinMaxScaler(inputCol="NumFeatures", outputCol="ScaledNumFeatures3")
 	scalerModel = scaler3.fit(df)
@@ -185,14 +184,14 @@ Here is an outline of this session:
 	Let's split string sentences into separate words.
 	Use Sparks [Tokenizer](https://spark.apache.org/docs/latest/ml-features.html#tokenizer)
 	```
-	# split the body text into separate words
+	# Split the body text into separate words
 	regexTokenizer = RegexTokenizer(inputCol="Body", outputCol="words", pattern="\\W")
 	df = regexTokenizer.transform(df)
 	df.head()
 	```
 	### CountVectorizer
-	- find the term frequencies of the words --> Sparks's CountVectorizer
-	- or even better TFIDF Term Frequency Inverse Document = relative specificity over words
+	- Find the term frequencies of the words --> Sparks's CountVectorizer
+	- Or even better: TFIDF Term Frequency Inverse Document = relative specificity over words
 	- Below: vocabSize=1000 (keep top 1000 most common words)
 	- Spark stores Word Counts as a Sparse Vector (word 0 --> 4 times, word 1 --> 6 times, etc.)
 	
@@ -205,9 +204,9 @@ Here is an outline of this session:
 	Result:
 	[Row(Body="<p>I'd like to check if an uploaded file is an image file (e.g png, jpg, jpeg, gif, bmp) or another file. The problem is that I'm using Uploadify to upload the files, which changes the mime type and gives a 'text/octal' or something as the mime type, no matter which file type you upload.</p>\n\n<p>Is there a way to check if the uploaded file is an image apart from checking the file extension using PHP?</p>\n", Id=1, Tags='php image-processing file-upload upload mime-types', Title='How to check if an uploaded file is an image without mime type?', oneTag='php', words=['p', 'i', 'd', 'like', 'to', 'check', 'if', 'an', 'uploaded', 'file', 'is', 'an', 'image', 'file', 'e', 'g', 'png', 'jpg', 'jpeg', 'gif', 'bmp', 'or', 'another', 'file', 'the', 'problem', 'is', 'that', 'i', 'm', 'using', 'uploadify', 'to', 'upload', 'the', 'files', 'which', 'changes', 'the', 'mime', 'type', 'and', 'gives', 'a', 'text', 'octal', 'or', 'something', 'as', 'the', 'mime', 'type', 'no', 'matter', 'which', 'file', 'type', 'you', 'upload', 'p', 'p', 'is', 'there', 'a', 'way', 'to', 'check', 'if', 'the', 'uploaded', 'file', 'is', 'an', 'image', 'apart', 'from', 'checking', 'the', 'file', 'extension', 'using', 'php', 'p'], TF=SparseVector(1000, {0: 4.0, 1: 6.0, 2: 2.0, 3: 3.0, 5: 2.0, 8: 4.0, 9: 1.0, 15: 1.0, 21: 2.0, 28: 1.0, 31: 1.0, 35: 3.0, 36: 1.0, 43: 2.0, 45: 2.0, 48: 1.0, 51: 1.0, 57: 6.0, 61: 2.0, 71: 1.0, 78: 1.0, 84: 3.0, 86: 1.0, 94: 1.0, 97: 1.0, 99: 1.0, 100: 1.0, 115: 1.0, 147: 2.0, 152: 1.0, 169: 1.0, 241: 1.0, 283: 1.0, 306: 1.0, 350: 2.0, 490: 1.0, 578: 1.0, 759: 1.0, 832: 2.0}))]
 	```
-	The vocabulary 
-	- Most common 1000 words
-	- Words close to the beginning are more common than the later ones
+	The vocabulary: 
+	- There are 1000 most common words.
+	- Words close to the beginning are more common than the later ones.
 	- Here p comes from the \<p> HTML paragraph
 	```
 	cvmodel.vocabulary
@@ -227,10 +226,9 @@ Here is an outline of this session:
 	]
 	```
 	### Inter-document Frequency
-	- If a word appears on a regular base (like 'the', 'a', 'and') it has maybe no deep meaning to get the content 
-	- Those stopwords should be less counted 
-	- TFIDF is useful for that 
-	It surpasses stopwords
+	- If a word appears on a regular base (like 'the', 'a', 'and') it has (maybe) no deep meaning to get the content. 
+	- Those stopwords should be less counted. 
+	- TFIDF is useful for that. It surpasses stopwords.
 	```
 	idf = IDF(inputCol="TF", outputCol="TFIDF")
 	idfModel = idf.fit(df)
@@ -241,12 +239,12 @@ Here is an outline of this session:
 	Row(Body="<p>I'd like to check if an uploaded file is an image file (e.g png, jpg, jpeg, gif, bmp) or another file. The problem is that I'm using Uploadify to upload the files, which changes the mime type and gives a 'text/octal' or something as the mime type, no matter which file type you upload.</p>\n\n<p>Is there a way to check if the uploaded file is an image apart from checking the file extension using PHP?</p>\n", Id=1, Tags='php image-processing file-upload upload mime-types', Title='How to check if an uploaded file is an image without mime type?', oneTag='php', words=['p', 'i', 'd', 'like', 'to', 'check', 'if', 'an', 'uploaded', 'file', 'is', 'an', 'image', 'file', 'e', 'g', 'png', 'jpg', 'jpeg', 'gif', 'bmp', 'or', 'another', 'file', 'the', 'problem', 'is', 'that', 'i', 'm', 'using', 'uploadify', 'to', 'upload', 'the', 'files', 'which', 'changes', 'the', 'mime', 'type', 'and', 'gives', 'a', 'text', 'octal', 'or', 'something', 'as', 'the', 'mime', 'type', 'no', 'matter', 'which', 'file', 'type', 'you', 'upload', 'p', 'p', 'is', 'there', 'a', 'way', 'to', 'check', 'if', 'the', 'uploaded', 'file', 'is', 'an', 'image', 'apart', 'from', 'checking', 'the', 'file', 'extension', 'using', 'php', 'p'], TF=SparseVector(1000, {0: 4.0, 1: 6.0, 2: 2.0, 3: 3.0, 5: 2.0, 8: 4.0, 9: 1.0, 15: 1.0, 21: 2.0, 28: 1.0, 31: 1.0, 35: 3.0, 36: 1.0, 43: 2.0, 45: 2.0, 48: 1.0, 51: 1.0, 57: 6.0, 61: 2.0, 71: 1.0, 78: 1.0, 84: 3.0, 86: 1.0, 94: 1.0, 97: 1.0, 99: 1.0, 100: 1.0, 115: 1.0, 147: 2.0, 152: 1.0, 169: 1.0, 241: 1.0, 283: 1.0, 306: 1.0, 350: 2.0, 490: 1.0, 578: 1.0, 759: 1.0, 832: 2.0}), TFIDF=SparseVector(1000, {0: 0.0026, 1: 0.7515, 2: 0.1374, 3: 0.3184, 5: 0.3823, 8: 1.0754, 9: 0.3344, 15: 0.5899, 21: 1.8551, 28: 1.1263, 31: 1.1113, 35: 3.3134, 36: 1.2545, 43: 2.3741, 45: 2.3753, 48: 1.2254, 51: 1.1879, 57: 11.0264, 61: 2.8957, 71: 2.1945, 78: 1.6947, 84: 6.5898, 86: 1.6136, 94: 2.3569, 97: 1.8218, 99: 2.6292, 100: 1.9206, 115: 2.3592, 147: 5.4841, 152: 2.1116, 169: 2.6328, 241: 2.5745, 283: 3.2325, 306: 3.2668, 350: 6.2367, 490: 3.8893, 578: 3.6182, 759: 3.7771, 832: 8.8964}))
 	```
 	### StringIndexer
-	- Let's covert the oneTag field that contains strings into numeric values
+	- Let's covert the oneTag field that contains strings into numeric values.
 	- Input column: oneTag
 	- Output column: label
-	- here php was transformed to label 3.0
-	- StringIndexer gives the 0th index the most common string
-	- Numeric values (dummy variables) are needed for Sparks ML models both as features and labels
+	- Here php was transformed to label 3.0.
+	- StringIndexer gives the 0th index the most common string.
+	- Numeric values (dummy variables) are needed for Sparks ML models both as features and labels.
 	```
 	indexer = StringIndexer(inputCol="oneTag", outputCol="label")
 	df = indexer.fit(df).transform(df)
@@ -259,14 +257,13 @@ Here is an outline of this session:
 	```
 
 ## Dimensionality Reduction via PCA <a name="dim_reduction"></a>
-- Open Jupyter Notebook ```text_processing.ipynb```
-- Useful to remove correlated features and shrink the feature space
-- Pricipal Component Analysis is one of the most common techniques
-- There is a built-in method in Spark's feature library
-- The Result is a DenseVector
-- PCA works well, if the number of input columns is not too hight, otherwise **out-of-memory** errors could occur
-- k=100 means that we want to keep 100 components
-- 
+- Open Jupyter Notebook ```text_processing.ipynb```.
+- Useful to remove correlated features and shrink the feature space.
+- Pricipal Component Analysis is one of the most common techniques.
+- There is a built-in method in Spark's feature library.
+- The Result is a DenseVector.
+- PCA works well, if the number of input columns is not too high, otherwise **out-of-memory** errors could occur.
+- k=100 means that we want to keep 100 components.
 	```
 	from pyspark.ml.feature import PCA
 	pca = PCA(k=100, inputCol="TFIDF", outputCol="pcaTFIDF")
@@ -280,8 +277,8 @@ Here is an outline of this session:
 ## Supervised ML Algorithms <a name="sl_learning"></a>
 - If labels are categorical --> **Classification**
 - If labels are numeric (and continuous) --> **Regression**
-- Spark supports
-	- binary and multiclass classification such as 
+- Spark supports:
+	- Binary and multiclass classification such as 
 		- Logistic regression
 		- RandomForest
 		- Gradient boosted trees
@@ -296,7 +293,7 @@ Here is an outline of this session:
 	![image2]
 
 ## Linear Regression <a name="lin_reg"></a>
-- Open Jupyter Notebook ```linear_regression.ipynb```
+- Open Jupyter Notebook ```linear_regression.ipynb```.
 	```
 	from pyspark.sql import SparkSession
 	from pyspark.sql.functions import col, concat, count, lit, udf, avg
@@ -338,7 +335,7 @@ Here is an outline of this session:
 	df = df.withColumn("NumTags", number_of_tags(df.Tags))
 	```
 	Check if **feature DescLength** correlates with **label NumTags**
-	In fact, with longer description there are more tags in the body. DescLength seems to be a good feature for a NumTags prediction
+	In fact, with longer description there are more tags in the body. DescLength seems to be a good feature for a NumTags prediction.
 	```
 	df.groupby("NumTags").agg(avg(col("DescLength"))).orderBy("NumTags").show()
 
@@ -354,7 +351,7 @@ Here is an outline of this session:
 	+-------+------------------+
 	```
 	### Create a Linear Regression Model 
-	As there is only one feature, try to find the slope, but not the intercept
+	As there is only one feature, try to find the slope, but not the intercept.
 	```
 	lr = LinearRegression(maxIter=5, regParam=0.0, fitIntercept=False, solver="normal")
 	```
@@ -395,16 +392,16 @@ Here is an outline of this session:
 	```
 
 ## Logistic Regression <a name="log_reg"></a>
-- Open Jupyter Notebook ```logistic_regression.ipynb```
-- Let's use NumTags (Number of tags) as the label
-- Remember that NumTags correlates with the Length of the description
-- Label is is numeric value (in the xample below it is 5)
-- TFIDF is a SparseVector
-- Use TFIDF as the feature - so try to prove if you can predict the number of tags with the term interdocument frequency
-- LogisticRegression is a standard Modul from Spark's ml.classification library
+- Open Jupyter Notebook ```logistic_regression.ipynb```.
+- Let's use NumTags (Number of tags) as the label.
+- Remember that NumTags correlates with the Length of the description.
+- Label is a numeric value (in the example below it is 5).
+- TFIDF is a SparseVector.
+- Use TFIDF as the feature - so try to prove if you can predict the number of tags with the term interdocument frequency.
+- LogisticRegression is a standard Modul from Spark's ml.classification library.
 - Result from coefficientMatrix:
-	- DenseMatrix with 6 rows and 1000 columns
-	- Values are the intercept vecors
+	- DenseMatrix with 6 rows and 1000 columns.
+	- Values are the intercept vectors.
 	```
 	from pyspark.sql import SparkSession
 	from pyspark.ml.feature import RegexTokenizer, CountVectorizer, IDF, StringIndexer, PCA
@@ -445,20 +442,20 @@ Here is an outline of this session:
 	```
 
 ## Unsupervised ML Algorithms <a name="unsupervised"></a>
-- Open Jupyter Notenbook ```k_means.ipynb```
-- There is no labeled data 
-- There are clusters
-- Based on similarieties between groups
-- In Spark included are clustering algorithms like 
+- Open Jupyter Notenbook ```k_means.ipynb```.
+- There is no labeled data. 
+- There are clusters.
+- Clusters are based on similarities between groups.
+- In Spark included are clustering algorithms like: 
 	- K-means
 	- Latent Dirichlet Allocation
 	- Gaussian Mixture Model
-- Consider that hybrid or semi-supervised (mixture of of unsupervised and supervised learning) is not fully implemented in Spark (own implementations are needed)
+- Consider that hybrid or semi-supervised (mixture of unsupervised and supervised learning) is not fully implemented in Spark (own implementations are needed).
 - Example below: 
 	- k-means approach 
-	- with five clusters, 
+	- with five clusters
 	- feature col "DescVec"
-	- prediction col ""DescGroup 
+	- prediction col "DescGroup" 
 	```
 	from pyspark.sql import SparkSession
 	from pyspark.sql.functions import avg, col, concat, count, desc, explode, lit, min, max, split, stddev, udf
@@ -496,17 +493,16 @@ Here is an outline of this session:
 
 
 ## Machine Learning Pipelines <a name="ml_pipelines"></a>
-- Open Jupyter Notebook ```ml_pipeline.ipynb```
-- Pipelines have two main components 
-- Transformer is an algorithm that transforms a dataframe to another
-- There are two use cases for transformers 
-	- feature transformation (tokenizer - changing text --> to numerical values, scaling columns etc.)
-	- making predictions for supervised learning models by transforming features using a model into predicted outcomes
-- Estimators fit algorithm parameters on a dataframe to create a transformer. 
+- Open Jupyter Notebook ```ml_pipeline.ipynb```.
+- Pipelines have two main components. 
+- Transformer is an algorithm that transforms a DataFrame to another.
+- There are two use cases for transformers: 
+	- Feature transformation (tokenizer - changing text --> to numerical values, scaling columns etc.)
+	- Making predictions for supervised learning models by transforming features using a model into predicted outcomes
+- Estimators fit algorithm parameters on a DataFrame to create a transformer. 
 	- It fits or trains data.
-	- It implements a method fit which accepts a dataframe and
-	- produces a model
-- A Pipeliine chains multiple transformers and estimators together to create an ML workflow
+	- It implements a method **fit** which accepts a DataFrame and produces a model.
+- A Pipeline chains multiple transformers and estimators together to create an ML workflow.
 
 	![image3]
 - Spark offers similar pipelines like in scikit-learn.  The chaining process need to be a **directed acyclic graph**. 
@@ -528,15 +524,15 @@ Here is an outline of this session:
 	df2 = spark.read.json(stack_overflow_data)
 	df2.persist()
 	```
-	- Implement a RegexTokenizer that turns the body into a list of words
-	- Use CountVectorizer to transform the words into term frequencies
-	- Set vocab size to 10000
-	- Use IDF to transform term frequencies into TFIDF
-	- Use Stringindexer to transform string tags into numeric values
-	- Define a LogisticRegression Model
-	- Define the actual pipeline object
+	- Implement a RegexTokenizer that turns the body into a list of words.
+	- Use CountVectorizer to transform the words into term frequencies.
+	- Set vocab size to 10000.
+	- Use IDF to transform term frequencies into TFIDF.
+	- Use Stringindexer to transform string tags into numeric values.
+	- Define a LogisticRegression Model.
+	- Define the actual pipeline object.
 	- As this set of transformers depends on the previous one the chaining order in the pipeline must be kept.
-	- StringIndexer is independent from the previous step
+	- StringIndexer is independent from the previous step.
 	```
 	# split the body text into separate words
 	regexTokenizer = RegexTokenizer(inputCol="Body", outputCol="words", pattern="\\W")
@@ -552,10 +548,10 @@ Here is an outline of this session:
 	```
 	plr = pipeline.fit(df2)
 	```
-	There are two new columns 
-	- probability --> type DenseVector
-	- prediction --> type numercal value
-	- You can see that the third label (in probability is quite high  with85%) this is the prediction
+	There are two new columns: 
+	- ***probability*** --> type DenseVector
+	- ***prediction*** --> type numercal value
+	- You can see that the third label (in probability) is quite high with 85%. This is the prediction.
 	```
 	df3 = plrModel.transform(df2)
 	df3.head()
@@ -566,28 +562,28 @@ Here is an outline of this session:
 	```
 	Check the prediction: 
 	- Filter where the label == prediction  
-	- and then count
+	- Then: count
 	```
 	df3.filter(df3.label == df3.prediction).count()
 
 	Result:
 	54616
 	```
-	From 10000 half - for half of it is the prediction right
+	For 10000 fits - for half of it is the prediction right.
 	
 ## Model Selection and Tuning <a name="model_select_tuning"></a>
-- Open Jupyer Notebook ```model_tuning.ipynb```
-- Hyperparameter Tuning is needed to get the best model
-- Spark offers hyperparameter tuning via
+- Open Jupyer Notebook ```model_tuning.ipynb```.
+- Hyperparameter Tuning is needed to get the best model.
+- Spark offers hyperparameter tuning:
 	- Train-Validation Split
 	- k-fold Cross Validation
-- Two parameters are needed
-	1. Define the parameter grid to explore
-	2. Evaluator. It defines the metric to evaluate the results on the test set
-- The best parameter combination is found by using the built-in cross validation methods
-- Spark fits the estimator using this best parameter set and the entire dataset
-- Before Spark 2.3 models were trained sequentially 
-- After Spark 2.3 models can be trained in paralle
+- Two parameters are needed:
+	1. Define the parameter grid to explore.
+	2. Evaluator. It defines the metric to evaluate the results on the test set.
+- The best parameter combination is found by using the built-in cross validation methods.
+- Spark fits the estimator by using this best parameter set and applying it on the entire dataset.
+- Before Spark 2.3 models were trained sequentially. 
+- After Spark 2.3 models can be trained in parallel.
 
 	![image5]
 	```
@@ -604,16 +600,16 @@ Here is an outline of this session:
 
 	import re
 	```
-	Make a random split to create train and test sets
+	Make a random split to create train and test sets.
 	```
 	train, test = df.randomSplit([0.8, 0.2], seed=42)
 	```
-	Or use this to ake a random split into train, validation and test sets
+	Or use this to take a random split into train, validation and test sets.
 	```
 	train, rest = df.randomSplit([0.6, 0.4], seed=42)
 	test, validation = rest.randomSplit([0.5, 0.5], seed=42)
 	```
-	Use the pipeline as before
+	Use the pipeline as before.
 	```
 	regexTokenizer = RegexTokenizer(inputCol="Body", outputCol="words", pattern="\\W")
 	cv = CountVectorizer(inputCol="words", outputCol="TF", vocabSize=1000)
@@ -625,13 +621,13 @@ Here is an outline of this session:
 	pipeline = Pipeline(stages=[regexTokenizer, cv, idf, indexer, lr])
 	```
 	Tune the model: Use the k-fold cross validation method
-	- Specify the estimator (here pipeline)
-	- Specify estimatorParamMaps for a parameter grid search
+	- Specify the estimator (here pipeline).
+	- Specify estimatorParamMaps for a parameter grid search.
 	- Specify an evaluator: here the MulticlassClassificationEvaluator
-	- numFolds (the part 1/numFolds is for testing, rest for training): e.g. 3 --> keep two thirds for training, use one third for testing. Then repeat this process three times
+	- numFolds (the part 1/numFolds is for testing, rest for training): e.g. 3 --> keep two thirds for training, use one third for testing. Then repeat this process three times.
 	
-	For the ParameterGrid
-	- Let's tune the number of words we keep in TFIDF features (e.g. 1000 and 5000 words)
+	For the ParameterGrid:
+	- Let's tune the number of words we keep in TFIDF features (e.g. 1000 and 5000 words).
 	- Consider: Number of models to train = number of parameters * numFolds
 	```
 	paramGrid = ParamGridBuilder() \
@@ -645,11 +641,11 @@ Here is an outline of this session:
 							evaluator=MulticlassClassificationEvaluator(),
 							numFolds=3)
 	```
-	Check the results 
+	Check the results: 
 	```
 	cvModel_q1 = crossval.fit(train)
 	```
-	For each parameter we get a list as below. 5000 words seem to give bit better accuracy than 1000 words
+	For each parameter we get a list as below. 5000 words seem to give a bit better accuracy than 1000 words.
 	```
 	cvModel_q1.avgMetrics
 
@@ -660,7 +656,7 @@ Here is an outline of this session:
 	0.2865146206452452]
 
 	```
-	Check accuracy of the test set via
+	Check accuracy of the test set via:
 	```
 	print(results.filter(results.label == results.prediction).count())
 	print(results.count())
